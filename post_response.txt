@@ -1,0 +1,75 @@
+pm.response.headers.each(function(header) {
+    console.log(header.key + ": " + header.value);
+});
+
+var headersObject = pm.response.headers.toObject();
+console.log(headersObject);
+
+
+
+// Get the response code and log it
+var responseCode = pm.response.code;
+console.log("Response Code:", responseCode);
+
+//If rate limited, log the 'Retry-After' header (if available)
+if(responseCode === 429) {
+    var retryAfter = pm.response.headers.get("Retry-After");
+    console.log("Rate limit reached. Retry-After:", retryAfter);
+}
+
+// Calculate and log the elapsed time for the request
+var requestStartTime = pm.environment.get("requestStartTime");
+if (requestStartTime) {
+    var elapsedTime = Date.now() - requestStartTime;
+    console.log("Elapsed Time (ms):", elapsedTime);
+}
+
+// Parse the JSON response
+var responseJson = pm.response.json();
+
+// Check that the response contains a 'results' property
+pm.test("Response contains results array", function() {
+    pm.expect(responseJson).to.have.property("results");
+});
+
+// Log the number of suggestions returned
+var resultCount = responseJson.results.length;
+console.log("Number of suggestions returned:", resultCount);
+
+// (Optional) Store the last result count in an environment variable for chaining or analysis
+pm.environment.set("lastResultCount", resultCount);
+
+pm.test("Response status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+
+pm.test("Response time is less than 200ms", function () {
+  pm.expect(pm.response.responseTime).to.be.below(200);
+});
+
+
+pm.test("Response has the required fields - version, count, and results", function () {
+    const responseData = pm.response.json();
+    
+    pm.expect(responseData).to.be.an('object');
+    pm.expect(responseData).to.have.property('version');
+    pm.expect(responseData).to.have.property('count');
+    pm.expect(responseData).to.have.property('results');
+});
+
+
+pm.test("Version is a non-empty string", function () {
+  const responseData = pm.response.json();
+  
+  pm.expect(responseData).to.be.an('object');
+  pm.expect(responseData.version).to.be.a('string').and.to.have.lengthOf.at.least(1, "Version should not be empty");
+});
+
+
+pm.test("Count is a non-negative integer", function () {
+    const responseData = pm.response.json();
+    
+    pm.expect(responseData).to.be.an('object');
+    pm.expect(responseData.count).to.exist.and.to.be.a('number').and.to.satisfy((value) => value >= 0);
+});

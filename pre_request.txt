@@ -1,0 +1,7 @@
+// Store the start time of the request
+pm.environment.set("requestStartTime", Date.now());
+
+// (Optional) Log the current prefix value from your data file if using one
+if (pm.variables.get("prefix")) {
+    console.log("Current prefix (from CSV):", pm.variables.get("prefix"));
+}
